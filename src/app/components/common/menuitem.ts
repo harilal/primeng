@@ -13,6 +13,9 @@ export interface MenuItem {
     target?: string;
     routerLinkActiveOptions?: any;
     separator?: boolean;
+    badge?: string;
+    badgeStyleClass?: string;
     style?:any;
     styleClass?:string;
+    title?: string;
 }

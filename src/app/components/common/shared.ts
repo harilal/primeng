@@ -65,7 +65,9 @@ export class TemplateWrapper implements OnInit, OnDestroy {
 })
 export class Column implements AfterContentInit{
     @Input() field: string;
+    @Input() colId: string;
     @Input() sortField: string;
+    @Input() filterField: string;
     @Input() header: string;
     @Input() footer: string;
     @Input() sortable: any;
@@ -139,6 +141,8 @@ export class Row {
     template: ``
 })
 export class HeaderColumnGroup {
+    
+    @Input() frozen: boolean;
         
     @ContentChildren(Row) rows: QueryList<any>;
 }
@@ -148,6 +152,8 @@ export class HeaderColumnGroup {
     template: ``
 })
 export class FooterColumnGroup {
+        
+    @Input() frozen: boolean;
         
     @ContentChildren(Row) rows: QueryList<any>;
 }
