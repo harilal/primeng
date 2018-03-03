@@ -19,11 +19,11 @@ export const CHIPS_VALUE_ACCESSOR: any = {
                 <li #token *ngFor="let item of value; let i = index;" class="ui-chips-token ui-state-highlight ui-corner-all">
                     <span *ngIf="!disabled" class="ui-chips-token-icon fa fa-fw fa-close" (click)="removeItem($event,i)"></span>
                     <span *ngIf="!itemTemplate" class="ui-chips-token-label">{{field ? resolveFieldData(item,field) : item}}</span>
-                    <ng-template *ngIf="itemTemplate" [pTemplateWrapper]="itemTemplate" [item]="item"></ng-template>
+                    <ng-container *ngTemplateOutlet="itemTemplate; context: {$implicit: item}"></ng-container>
                 </li>
                 <li class="ui-chips-input-token">
-                    <input #inputtext type="text" [attr.id]="inputId" [attr.placeholder]="placeholder" [attr.tabindex]="tabindex" (keydown)="onKeydown($event,inputtext)" 
-                        (focus)="onInputFocus()" (blur)="onInputBlur($event,inputtext)" [disabled]="maxedOut||disabled" [disabled]="disabled" [ngStyle]="inputStyle" [class]="inputStyleClass">
+                    <input #inputtext type="text" [attr.id]="inputId" [attr.placeholder]="(value && value.length ? null : placeholder)" [attr.tabindex]="tabindex" (keydown)="onKeydown($event,inputtext)" 
+                        (focus)="onInputFocus($event)" (blur)="onInputBlur($event,inputtext)" [disabled]="maxedOut||disabled" [disabled]="disabled" [ngStyle]="inputStyle" [class]="inputStyleClass">
                 </li>
             </ul>
         </div>
@@ -131,9 +131,9 @@ export class Chips implements AfterContentInit,ControlValueAccessor {
         }
     }
     
-    onInputFocus() {
+    onInputFocus(event: FocusEvent) {
         this.focus = true;
-        this.onFocus.emit();
+        this.onFocus.emit(event);
     }
 
     onInputBlur(event: FocusEvent, inputEL: HTMLInputElement) {
@@ -143,7 +143,7 @@ export class Chips implements AfterContentInit,ControlValueAccessor {
             inputEL.value = '';
         }
         this.onModelTouched();
-        this.onBlur.emit();
+        this.onBlur.emit(event);
     }
     
     removeItem(event: Event, index: number): void {
@@ -163,7 +163,7 @@ export class Chips implements AfterContentInit,ControlValueAccessor {
     addItem(event: Event, item: string): void {
         this.value = this.value||[];
         if(item && item.trim().length && (!this.max||this.max > item.length)) {
-            if(this.allowDuplicate || !this.value.includes(item)) {
+            if(this.allowDuplicate || this.value.indexOf(item) === -1) {
                 this.value = [...this.value, item];
                 this.onModelChange(this.value);
                 this.onAdd.emit({

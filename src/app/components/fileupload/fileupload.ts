@@ -8,20 +8,21 @@ import {ProgressBarModule} from '../progressbar/progressbar';
 import {DomHandler} from '../dom/domhandler';
 import {Message} from '../common/message';
 import {PrimeTemplate,SharedModule} from '../common/shared';
+import {BlockableUI} from '../common/blockableui';
 
 @Component({
     selector: 'p-fileUpload',
     template: `
         <div [ngClass]="'ui-fileupload ui-widget'" [ngStyle]="style" [class]="styleClass" *ngIf="mode === 'advanced'">
             <div class="ui-fileupload-buttonbar ui-widget-header ui-corner-top">
-                <span class="ui-fileupload-choose" [label]="chooseLabel" icon="fa-plus" pButton  [ngClass]="{'ui-state-focus': focus}" [attr.disabled]="disabled" > 
+                <span class="ui-fileupload-choose" [label]="chooseLabel" icon="fa-plus" pButton [ngClass]="{'ui-state-focus': focus}"> 
                     <input #advancedfileinput type="file" (change)="onFileSelect($event)" [multiple]="multiple" [accept]="accept" [disabled]="disabled" (focus)="onFocus()" (blur)="onBlur()">
                 </span>
 
                 <button *ngIf="!auto&&showUploadButton" type="button" [label]="uploadLabel" icon="fa-upload" pButton (click)="upload()" [disabled]="!hasFiles()"></button>
                 <button *ngIf="!auto&&showCancelButton" type="button" [label]="cancelLabel" icon="fa-close" pButton (click)="clear()" [disabled]="!hasFiles()"></button>
             
-                <p-templateLoader [template]="toolbarTemplate"></p-templateLoader>
+                <ng-container *ngTemplateOutlet="toolbarTemplate"></ng-container>
             </div>
             <div #content [ngClass]="{'ui-fileupload-content ui-widget-content ui-corner-bottom':true}" 
                 (dragenter)="onDragEnter($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)">
@@ -42,7 +43,7 @@ import {PrimeTemplate,SharedModule} from '../common/shared';
                         <ng-template ngFor [ngForOf]="files" [ngForTemplate]="fileTemplate"></ng-template>
                     </div>
                 </div>
-                <p-templateLoader [template]="contentTemplate"></p-templateLoader>
+                <ng-container *ngTemplateOutlet="contentTemplate"></ng-container>
             </div>
         </div>
         <span class="ui-button ui-fileupload-choose ui-widget ui-state-default ui-corner-all ui-button-text-icon-left" *ngIf="mode === 'basic'" 
@@ -56,7 +57,7 @@ import {PrimeTemplate,SharedModule} from '../common/shared';
     `,
     providers: [DomHandler]
 })
-export class FileUpload implements OnInit,AfterViewInit,AfterContentInit,OnDestroy {
+export class FileUpload implements OnInit,AfterViewInit,AfterContentInit,OnDestroy,BlockableUI {
 
     @Input() name: string;
 
@@ -145,10 +146,10 @@ export class FileUpload implements OnInit,AfterViewInit,AfterContentInit,OnDestr
     public toolbarTemplate: TemplateRef<any>;
 
     focus: boolean;
-    
-    selfInputChange: boolean;
 
-    constructor(public domHandler: DomHandler, public sanitizer: DomSanitizer, public zone: NgZone){}
+    duplicateIEEvent: boolean;  // flag to recognize duplicate onchange event for file input
+
+    constructor(private el: ElementRef, public domHandler: DomHandler, public sanitizer: DomSanitizer, public zone: NgZone){}
 
     ngOnInit() {
         this.files = [];
@@ -185,8 +186,8 @@ export class FileUpload implements OnInit,AfterViewInit,AfterContentInit,OnDestr
     }
 
     onFileSelect(event) {
-        if(this.isIE11() && this.selfInputChange) {
-            this.selfInputChange = false;
+        if(event.type !== 'drop' && this.isIE11() && this.duplicateIEEvent) {
+            this.duplicateIEEvent = false;
             return;
         }
 
@@ -198,7 +199,7 @@ export class FileUpload implements OnInit,AfterViewInit,AfterContentInit,OnDestr
         let files = event.dataTransfer ? event.dataTransfer.files : event.target.files;
         for(let i = 0; i < files.length; i++) {
             let file = files[i];
-            
+
             if(!this.isFileSelected(file)){
               if(this.validate(file)) {
                   if(this.isImage(file)) {
@@ -216,7 +217,11 @@ export class FileUpload implements OnInit,AfterViewInit,AfterContentInit,OnDestr
             this.upload();
         }
 
-        this.clearInputElement();
+        if (event.type !== 'drop' && this.isIE11()) {
+          this.clearIEInput();
+        } else {
+          this.clearInputElement();
+        }
     }
 
     isFileSelected(file: File): boolean{
@@ -224,11 +229,11 @@ export class FileUpload implements OnInit,AfterViewInit,AfterContentInit,OnDestr
             if((sFile.name + sFile.type + sFile.size) === (file.name + file.type+file.size)) {
                 return true;
             }
-        }   
-      
+        }
+
         return false;
     }
-    
+
     isIE11() {
         return !!window['MSInputMethodContext'] && !!document['documentMode'];
     }
@@ -356,12 +361,15 @@ export class FileUpload implements OnInit,AfterViewInit,AfterContentInit,OnDestr
     }
 
     clearInputElement() {
-      if(this.advancedFileInput && this.advancedFileInput.nativeElement) {
-          if(this.isIE11()) {
-               this.selfInputChange = true; //IE11 fix to prevent onFileChange trigger again
-          }
-         
-          this.advancedFileInput.nativeElement.value = '';
+      if (this.advancedFileInput && this.advancedFileInput.nativeElement) {
+        this.advancedFileInput.nativeElement.value = '';
+      }
+    }
+
+    clearIEInput() {
+      if (this.advancedFileInput && this.advancedFileInput.nativeElement) {
+        this.duplicateIEEvent = true; //IE11 fix to prevent onFileChange trigger again
+        this.advancedFileInput.nativeElement.value = '';
       }
     }
 
@@ -430,6 +438,10 @@ export class FileUpload implements OnInit,AfterViewInit,AfterContentInit,OnDestr
         if(this.hasFiles()) {
             this.upload();
         }
+    }
+
+    getBlockableElement(): HTMLElement {
+      return this.el.nativeElement.children[0];
     }
 
     ngOnDestroy() {

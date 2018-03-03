@@ -40,7 +40,7 @@
             <h3>Import</h3>
 <pre>
 <code class="language-typescript" pCode ngNonBindable>
-import &#123;AutoCompleteModule&#125; from 'primeng/primeng';
+import &#123;AutoCompleteModule&#125; from 'primeng/autocomplete';
 </code>
 </pre>
 
@@ -179,7 +179,7 @@ export class AutoCompleteDemo &#123;
             to make sure the value passed to the model is always one of the suggestions.</p>
             <pre>
             <code class="language-markup" pCode ngNonBindable>
-&lt;p-autoComplete [(ngModel)]="val" [suggestions]="results" (completeMethod)="search($event)" forceSelection="true"&gt;&lt;/p-autoComplete&gt;
+&lt;p-autoComplete [(ngModel)]="val" [suggestions]="results" (completeMethod)="search($event)" [forceSelection]="true"&gt;&lt;/p-autoComplete&gt;
             </code>
             </pre>
 
@@ -198,7 +198,8 @@ export class AutoCompleteDemo &#123;
 </code>
 </pre>
 
-            <p>In multiple mode, selected item can be customized using selectedItem ng-template.</p>
+            <p>In multiple mode, selected item can be customized using selectedItem ng-template. Note that this
+                template is not supported in single mode.</p>
 <pre>
 <code class="language-markup" pCode ngNonBindable>
 &lt;p-autoComplete [(ngModel)]="texts" [suggestions]="results" (completeMethod)="search($event)" [multiple]="true"&gt;
@@ -363,7 +364,7 @@ export class AutoCompleteDemo &#123;
                             <td>immutable</td>
                             <td>boolean</td>
                             <td>true</td>
-                            <td>Defines how the suggestions should be manipulated.</td>
+                            <td>Defines how the suggestions should be manipulated. More information is available at "Change Detection" section above.</td>
                         </tr>
                         <tr>
                             <td>required</td>
@@ -478,7 +479,7 @@ export class AutoCompleteDemo &#123;
                             <td>List container of suggestions.</td>
                         </tr>
                         <tr>
-                            <td>ui-autocomplete-item</td>
+                            <td>ui-autocomplete-list-item</td>
                             <td>List item of a suggestion.</td>
                         </tr>
                         <tr>
